@@ -29,34 +29,45 @@ def claude_move(move: str, prompt: str, api_key: str):
 
     game_state = open("logger.txt", "r").read()
 
-    prompt = f"here is your prompt: {prompt}\n\n"
-    prompt += f"here is the current state of the board: {move}\n\n"
-    prompt += f"here is the current state of the game: {game_state}\n\n"
+    prompt_text = f"here is your prompt: {prompt}\n\n"
+    prompt_text += f"here is the current state of the board: {move}\n\n"
+    prompt_text += f"here is the current state of the game: {game_state}\n\n"
+
+    console.print(f"[bold red]Prompt text:[/bold red] {prompt_text}")
 
     console.print(f"[bold green]Claude is thinking...[/bold green]")
     client = anthropic.Anthropic(api_key=api_key)
     response = client.messages.create(
-        model="claude-sonnet-4",
-        messages=[{"role": "user", "content": prompt + "\n\n" + move}],
+        model="claude-3-7-sonnet-latest",
+        messages=[{"role": "user", "content": prompt_text}],
         max_tokens=100
     )
     return response.content[0].text
 
 
-def model_move_benchmark(model: str, move: str, prompt: str, api_key: str):
+def model_move_benchmark(model: str, move_list, prompt: str, api_key: str):
     console = Console()
+
+    # Convert the move list to a string if it's a list
+    if isinstance(move_list, list):
+        if not move_list:  # If the list is empty
+            move_str = "Starting position"
+        else:
+            move_str = ", ".join(move_list)  # Join moves with commas
+    else:
+        move_str = str(move_list)  # Ensure it's a string
 
     game_state = open("logger.txt", "r").read()
 
     prompt_text = f"here is your prompt: {prompt}\n\n"
-    prompt_text += f"here is the current state of the board: {move}\n\n"
+    prompt_text += f"here is the current state of the board: {move_str}\n\n"
     prompt_text += f"here is the current state of the game: {game_state}\n\n"
 
     match model:
         case "claude sonnet 4":
-            return claude_move(move, prompt, api_key)
+            return claude_move(move_str, prompt, api_key)
         case "gemini 2.5 flash":
-            return gemini_move(move, prompt, api_key)
+            return gemini_move(move_str, prompt, api_key)
 
 
 def model_move(model: str, move: str, prompt: str, api_key: str):
@@ -198,10 +209,11 @@ def chessmatch_benchmark(model: str, api_key: str):
     # Changed to not game_over to make the loop run
     round_count = 1
 
-    while not game_over:
-        move_player1 = []
-        move_player2 = []
+    # Initialize move history for both players
+    move_player1 = []
+    move_player2 = []
 
+    while not game_over:
         console.print(f"\n[bold magenta]Round {round_count}[/bold magenta]")
         console.print(
             f"[bold blue]Model {model} (Player 1) is thinking...[/bold blue]")
@@ -223,6 +235,10 @@ def chessmatch_benchmark(model: str, api_key: str):
                 logger.write(
                     f"Round {round_count} - Player 1 move: {computer_1_move}\n")
 
+            # After Player 1's move
+            with open("logger.txt", "a") as game_logger:
+                game_logger.write(f"Player 1 move: {computer_1_move}\n")
+
             console.print(
                 f"[bold blue]Model {model} (Player 2) is thinking...[/bold blue]")
 
@@ -241,6 +257,10 @@ def chessmatch_benchmark(model: str, api_key: str):
             with open(log_filename, "a") as logger:
                 logger.write(
                     f"Round {round_count} - Player 2 move: {computer_2_move}\n\n")
+
+            # After Player 2's move
+            with open("logger.txt", "a") as game_logger:
+                game_logger.write(f"Player 2 move: {computer_2_move}\n")
 
             round_count += 1
 
