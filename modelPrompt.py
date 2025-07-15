@@ -9,6 +9,7 @@ When I provide a move, you should respond with your counter move in standard alg
 If you detect a checkmate, respond with "checkmate".
 Analyze the board carefully and make the best move possible.
 if no move was made, take that as if its the beginning of the game and play the first move.
+you are not required to explain your move, just respond with the move.
 response example: e4
 """
 
@@ -18,6 +19,7 @@ When I provide a move, you should respond with your counter move in standard alg
 If you detect a checkmate, respond with "checkmate".
 Analyze the board carefully and make the best move possible.
 if no move was made, take that as if its the beginning of the game and play the first move.
+you are not required to explain your move, just respond with the move.
 response example: e4
 """
 
@@ -27,6 +29,7 @@ When I provide a move, you should respond with your counter move in standard alg
 If you detect a checkmate, respond with "checkmate".
 Analyze the board carefully and make the best move possible.
 if no move was made, take that as if its the beginning of the game and play the first move.
+you are not required to explain your move, just respond with the move.
 response example: e4
 """
 
@@ -36,5 +39,6 @@ When I provide a move, you should respond with your counter move in standard alg
 If you detect a checkmate, respond with "checkmate".
 Analyze the board carefully and make the best move possible.
 if no move was made, take that as if its the beginning of the game and play the first move.
+you are not required to explain your move, just respond with the move.
 response example: e4
 """

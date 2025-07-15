@@ -33,7 +33,7 @@ def claude_move(move: str, prompt: str, api_key: str):
     prompt_text += f"here is the current state of the board: {move}\n\n"
     prompt_text += f"here is the current state of the game: {game_state}\n\n"
 
-    console.print(f"[bold red]Prompt text:[/bold red] {prompt_text}")
+    # console.print(f"[bold red]Prompt text:[/bold red] {prompt_text}")
 
     console.print(f"[bold green]Claude is thinking...[/bold green]")
     client = anthropic.Anthropic(api_key=api_key)
