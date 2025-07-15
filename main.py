@@ -107,18 +107,49 @@ def main():
     if api_key:
         display_screen(title_content)
         console.print(
-            "[bold green]Starting game with the following configuration:[/bold green]")
+            "[bold green]Starting with the following configuration:[/bold green]")
         console.print(f"[bold]Name:[/bold] {name}")
         console.print(f"[bold]Model:[/bold] {model}")
         console.print(
             f"[bold]API Key:[/bold] {'*' * 5 + api_key[-4:] if api_key else 'None'}")
+
+        # Ask user if they want to play chess or benchmark the LLM
         console.print(
-            "\n[bold green]Press any key to start the game...[/bold green]")
-        keyboard.read_event(suppress=True)
+            "\n[bold yellow]What would you like to do?[/bold yellow]")
+        console.print("[1] Play chess against the AI")
+        console.print("[2] Run an AI benchmark (AI vs AI)")
 
-        from chess import chess_match
+        choice = console.input(
+            "[bold cyan]Enter your choice (1/2): [/bold cyan]")
 
-        chess_match(name, model, api_key)
+        from chess import chess_match, chessmatch_benchmark
+
+        if choice == "1":
+            console.print("\n[bold green]Starting chess game...[/bold green]")
+            console.print(
+                "\n[bold green]Press any key to begin...[/bold green]")
+            keyboard.read_event(suppress=True)
+            chess_match(name, model, api_key)
+        elif choice == "2":
+            console.print(
+                "\n[bold green]Starting benchmark mode...[/bold green]")
+            console.print(
+                "\n[bold green]Press any key to begin...[/bold green]")
+            keyboard.read_event(suppress=True)
+            chessmatch_benchmark(model, api_key)
+        else:
+            console.print(
+                "[bold red]Invalid choice. Defaulting to chess game.[/bold red]")
+            console.print(
+                "\n[bold green]Press any key to begin...[/bold green]")
+            keyboard.read_event(suppress=True)
+            chess_match(name, model, api_key)
+
+        if Confirm.ask("Do you want to play again?"):
+            main()
+        else:
+            print("Thanks for playing!")
+            exit(0)
 
 
 if __name__ == "__main__":
