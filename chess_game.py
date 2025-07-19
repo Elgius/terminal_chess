@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from google import genai
 from openai import OpenAI
+import chess_move_validator
 
 
 def gpt_move(move: str, prompt_text: str, api_key: str):
@@ -235,39 +236,113 @@ def chess_match(name: str, model: str, api_key: str):
                 "[yellow]Please try again or restart the game.[/yellow]")
 
 
-def chessmatch_benchmark(model: str, api_key: str):
+def get_second_model(first_model):
+    """Get a random model that is different from the first model"""
+    models = ["gpt 4o", "claude sonnet 4", "gemini 2.5 flash"]
+    # Remove the first model from the list
+    if first_model in models:
+        models.remove(first_model)
+    # Return a random model from the remaining options
+    return random.choice(models)
+
+
+def chessmatch_benchmark(model1: str = None, api_key1: str = None):
     console = Console()
     game_over = False
 
-    match model:
-        case "gpt 4o":
-            prompt = CHAT_GPT_PROMPT
-        case "claude sonnet 4":
-            prompt = CLAUDE_SONNET_4_PROMPT
-        case "gemini 2.5 flash":
-            prompt = GEMINI_2_5_FLASH_PROMPT
-        case "deepseek":
-            prompt = DEEPSEEK_R1_PROMPT
-
+    # We should already have the first model from main.py
+    # Just display information about the first model
     console.print(
         Panel(f"[bold yellow]AI BENCHMARK MODE[/bold yellow]", border_style="yellow"))
     console.print(
-        f"[bold blue]Running benchmark with model:[/bold blue] [bold green]{model}[/bold green]")
+        f"[bold blue]First AI model:[/bold blue] [bold green]{model1}[/bold green]")
+
+    # Get API key for the first model if not provided
+    if api_key1 is None:
+        from key_handler import get_key
+        api_key1 = get_key(model1, "AI Benchmark")
+        if not api_key1:
+            console.print(
+                "[bold red]No API key provided for the first model. Exiting benchmark.[/bold red]")
+            return
+
+    # Let the user select which model they want to face against
+    console.print(
+        "[bold blue]Select the second AI model to face against:[/bold blue]")
+
+    # Create a list of available models excluding the first model
+    available_models = ["gpt 4o", "claude sonnet 4", "gemini 2.5 flash"]
+    if model1 in available_models:
+        available_models.remove(model1)
+
+    for i, model_name in enumerate(available_models, 1):
+        console.print(f"[{i}] {model_name.title()}")
+
+    choice = console.input(
+        f"[bold cyan]Enter your choice (1-{len(available_models)}): [/bold cyan]")
+
+    try:
+        model2 = available_models[int(choice) - 1]
+        console.print(
+            f"[bold blue]Second AI model:[/bold blue] [bold green]{model2}[/bold green]")
+    except (ValueError, IndexError):
+        # If invalid choice, pick randomly
+        model2 = get_second_model(model1)
+        console.print(
+            f"[bold red]Invalid choice. Randomly selected:[/bold red] [bold green]{model2}[/bold green]")
+
+    # Get API key for the second model
+    from key_handler import get_key
+    api_key2 = get_key(model2, "AI Benchmark - Second Model")
+    if not api_key2:
+        console.print(
+            "[bold red]No API key provided for the second model. Exiting benchmark.[/bold red]")
+        return
+
+    # Get prompts for both models
+    match model1:
+        case "gpt 4o":
+            prompt1 = CHAT_GPT_PROMPT
+        case "claude sonnet 4":
+            prompt1 = CLAUDE_SONNET_4_PROMPT
+        case "gemini 2.5 flash":
+            prompt1 = GEMINI_2_5_FLASH_PROMPT
+        case "deepseek":
+            prompt1 = DEEPSEEK_R1_PROMPT
+
+    match model2:
+        case "gpt 4o":
+            prompt2 = CHAT_GPT_PROMPT
+        case "claude sonnet 4":
+            prompt2 = CLAUDE_SONNET_4_PROMPT
+        case "gemini 2.5 flash":
+            prompt2 = GEMINI_2_5_FLASH_PROMPT
+        case "deepseek":
+            prompt2 = DEEPSEEK_R1_PROMPT
+
+    console.print(
+        Panel(f"[bold yellow]AI vs AI BENCHMARK[/bold yellow]", border_style="yellow"))
+    console.print(
+        f"[bold blue]Player 1:[/bold blue] [bold green]{model1}[/bold green]")
+    console.print(
+        f"[bold blue]Player 2:[/bold blue] [bold green]{model2}[/bold green]")
 
     player1_side = random.choice([True, False])
     player1_side = "white" if player1_side else "black"
 
     console.print(
-        f"[yellow]Player 1 will play as:[/yellow] [bold]{player1_side}[/bold]")
+        f"[yellow]{model1} (Player 1) will play as:[/yellow] [bold]{player1_side}[/bold]")
     console.print(
-        f"[yellow]Player 2 will play as:[/yellow] [bold]{'black' if player1_side == 'white' else 'white'}[/bold]")
+        f"[yellow]{model2} (Player 2) will play as:[/yellow] [bold]{'black' if player1_side == 'white' else 'white'}[/bold]")
 
     # Create a logger file for the benchmark
-    log_filename = f"benchmark_for_{model.replace(' ', '_')}.txt"
+    log_filename = f"benchmark_{model1.replace(' ', '_')}_vs_{model2.replace(' ', '_')}.txt"
 
     try:
         with open(log_filename, "w") as logger:
-            logger.write(f"Player1 side: {player1_side}\n")
+            logger.write(f"Player 1 ({model1}): {player1_side}\n")
+            logger.write(
+                f"Player 2 ({model2}): {'black' if player1_side == 'white' else 'white'}\n")
             logger.write(f"Starting benchmark...\n\n")
         console.print(f"[dim]Created benchmark log file: {log_filename}[/dim]")
     except Exception as e:
@@ -277,69 +352,86 @@ def chessmatch_benchmark(model: str, api_key: str):
     # Create a logger.txt file for tracking game state
     with open("logger.txt", "w") as game_logger:
         game_logger.write("Benchmark started\n")
+        game_logger.write(f"Player 1: {model1} ({player1_side})\n")
+        game_logger.write(
+            f"Player 2: {model2} ({'black' if player1_side == 'white' else 'white'})\n")
 
     console.print(
         Panel("[bold green]The board is set up for benchmark[/bold green]", border_style="green"))
     console.print("[bold cyan]Starting AI vs AI match...[/bold cyan]")
 
-    # Fix the game_over flag - it was initially set to False but loop checked "while game_over"
-    # Changed to not game_over to make the loop run
     round_count = 1
 
     # Initialize move history for both players
     move_player1 = []
     move_player2 = []
 
-    while not game_over:
+    while not game_over and round_count <= 40:  # Add a maximum round limit to prevent infinite games
         console.print(f"\n[bold magenta]Round {round_count}[/bold magenta]")
         console.print(
-            f"[bold blue]Model {model} (Player 1) is thinking...[/bold blue]")
+            f"[bold blue]{model1} (Player 1) is thinking...[/bold blue]")
 
         try:
             computer_1_move = model_move_benchmark(
-                model, move_player2, prompt, api_key)
+                model1, move_player2, prompt1, api_key1)
 
             if computer_1_move == "checkmate":
-                console.print("[bold red]Player 1 lost![/bold red]")
+                console.print(
+                    f"[bold red]Player 1 ({model1}) lost![/bold red]")
+                game_over = True
+                break
+            elif computer_1_move == "error":
+                console.print(
+                    f"[bold red]Player 1 ({model1}) made an error. Ending game.[/bold red]")
                 game_over = True
                 break
 
             move_player1.append(computer_1_move)
             console.print(
-                f"[bold green]Player 1 move:[/bold green] {computer_1_move}")
+                f"[bold green]Player 1 ({model1}) move:[/bold green] {computer_1_move}")
 
             with open(log_filename, "a") as logger:
                 logger.write(
-                    f"Round {round_count} - Player 1 move: {computer_1_move}\n")
+                    f"Round {round_count} - Player 1 ({model1}) move: {computer_1_move}\n")
 
             # After Player 1's move
             with open("logger.txt", "a") as game_logger:
                 game_logger.write(f"Player 1 move: {computer_1_move}\n")
 
             console.print(
-                f"[bold blue]Model {model} (Player 2) is thinking...[/bold blue]")
+                f"[bold blue]{model2} (Player 2) is thinking...[/bold blue]")
 
             computer_2_move = model_move_benchmark(
-                model, move_player1, prompt, api_key)
+                model2, move_player1, prompt2, api_key2)
 
             if computer_2_move == "checkmate":
-                console.print("[bold red]Player 2 lost![/bold red]")
+                console.print(
+                    f"[bold red]Player 2 ({model2}) lost![/bold red]")
+                game_over = True
+                break
+            elif computer_2_move == "error":
+                console.print(
+                    f"[bold red]Player 2 ({model2}) made an error. Ending game.[/bold red]")
                 game_over = True
                 break
 
             move_player2.append(computer_2_move)
             console.print(
-                f"[bold green]Player 2 move:[/bold green] {computer_2_move}")
+                f"[bold green]Player 2 ({model2}) move:[/bold green] {computer_2_move}")
 
             with open(log_filename, "a") as logger:
                 logger.write(
-                    f"Round {round_count} - Player 2 move: {computer_2_move}\n\n")
+                    f"Round {round_count} - Player 2 ({model2}) move: {computer_2_move}\n\n")
 
             # After Player 2's move
             with open("logger.txt", "a") as game_logger:
                 game_logger.write(f"Player 2 move: {computer_2_move}\n")
 
             round_count += 1
+
+            # Add a small delay between rounds for readability
+            import time
+            time.sleep(1)
 
         except Exception as e:
             console.print(
@@ -358,6 +450,16 @@ def chessmatch_benchmark(model: str, api_key: str):
                     f"[bold red]Failed to log error: {str(log_error)}[/bold red]")
             game_over = True
 
+    # If we reached the maximum number of rounds
+    if round_count > 40:
+        console.print(
+            "[bold yellow]Maximum number of rounds reached. Game ended in a draw.[/bold yellow]")
+        with open(log_filename, "a") as logger:
+            logger.write("Game ended in a draw after 40 rounds.\n")
+
     console.print(
         Panel("[bold yellow]Benchmark Complete![/bold yellow]", border_style="yellow"))
     console.print(f"[dim]Full log available in: {log_filename}[/dim]")
+
+    # analysing the game
+    chess_move_validator.analyze_game(log_filename)

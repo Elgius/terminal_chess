@@ -122,7 +122,7 @@ def main():
         choice = console.input(
             "[bold cyan]Enter your choice (1/2): [/bold cyan]")
 
-        from chess import chess_match, chessmatch_benchmark
+        from chess_game import chess_match, chessmatch_benchmark
 
         if choice == "1":
             console.print("\n[bold green]Starting chess game...[/bold green]")
@@ -136,6 +136,7 @@ def main():
             console.print(
                 "\n[bold green]Press any key to begin...[/bold green]")
             keyboard.read_event(suppress=True)
+            # Pass the already selected model and API key to the benchmark function
             chessmatch_benchmark(model, api_key)
         else:
             console.print(
